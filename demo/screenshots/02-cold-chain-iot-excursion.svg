@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" font-family="Arial,sans-serif">
+  <rect width="1200" height="800" fill="#0a0f1e"/>
+  <!-- Header -->
+  <rect x="0" y="0" width="1200" height="64" fill="#111827" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="24" y="22" fill="#60a5fa" font-size="14" font-weight="600">RouteGuard AI</text>
+  <text x="24" y="42" fill="#94a3b8" font-size="11">Cold Chain IoT Sensor Monitor</text>
+  <rect x="900" y="14" width="220" height="26" rx="4" fill="#1e3a5f"/>
+  <text x="912" y="32" fill="#38bdf8" font-size="11">IBM BoB AI Hackathon 2026</text>
+  <!-- Nav Tabs -->
+  <rect x="0" y="64" width="1200" height="44" fill="#0f172a"/>
+  <text x="22" y="91" fill="#64748b" font-size="11">Control Tower Overview</text>
+  <rect x="196" y="72" width="180" height="28" rx="4" fill="#1e3a5f"/>
+  <text x="206" y="91" fill="#60a5fa" font-size="11" font-weight="700">Cold Chain IoT</text>
+  <text x="390" y="91" fill="#64748b" font-size="11">Carrier Auction</text>
+  <text x="540" y="91" fill="#64748b" font-size="11">Fleet Assets</text>
+  <text x="670" y="91" fill="#64748b" font-size="11">BoB Copilot</text>
+  <!-- Main Card -->
+  <rect x="12" y="120" width="1176" height="648" rx="8" fill="#111827" stroke="#1e3a5f" stroke-width="1"/>
+  <!-- Header Row -->
+  <text x="28" y="150" fill="#e2e8f0" font-size="16" font-weight="700">Cold Chain IoT Sensor Log and Excursion Inspector</text>
+  <text x="28" y="170" fill="#94a3b8" font-size="11">Pre-delivery temperature excursion detection and WHO/USFDA 21 CFR regulatory severity classification.</text>
+  <rect x="900" y="130" width="240" height="30" rx="5" fill="#7f1d1d"/>
+  <text x="912" y="151" fill="#fca5a5" font-size="13" font-weight="700">BREACH DETECTED - SHP-1001</text>
+  <!-- Chart Area Label -->
+  <text x="28" y="200" fill="#64748b" font-size="11" font-weight="600">SHP-1001 (Vaccine Cold Chain) - Temperature Log (Celsius) - Last 6 Hours</text>
+  <!-- Chart Frame -->
+  <rect x="28" y="210" width="1140" height="240" rx="6" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <!-- Y-axis labels -->
+  <text x="36" y="228" fill="#64748b" font-size="9">14C</text>
+  <text x="36" y="264" fill="#64748b" font-size="9">12C</text>
+  <text x="36" y="300" fill="#64748b" font-size="9">10C</text>
+  <text x="36" y="336" fill="#64748b" font-size="9">8C</text>
+  <text x="36" y="372" fill="#64748b" font-size="9">6C</text>
+  <text x="36" y="408" fill="#64748b" font-size="9">4C</text>
+  <text x="36" y="440" fill="#64748b" font-size="9">2C</text>
+  <!-- Grid lines -->
+  <line x1="60" y1="228" x2="1155" y2="228" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="60" y1="264" x2="1155" y2="264" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="60" y1="300" x2="1155" y2="300" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4,4"/>
+  <!-- Safe zone band (2-8C) -->
+  <rect x="60" y="336" width="1095" height="108" fill="rgba(52,211,153,0.06)"/>
+  <line x1="60" y1="336" x2="1155" y2="336" stroke="#34d399" stroke-width="1" stroke-dasharray="6,3"/>
+  <line x1="60" y1="444" x2="1155" y2="444" stroke="#34d399" stroke-width="1" stroke-dasharray="6,3"/>
+  <text x="62" y="333" fill="#34d399" font-size="9">Max threshold 8C</text>
+  <text x="62" y="455" fill="#34d399" font-size="9">Min threshold 2C</text>
+  <!-- Temperature line chart - data points: 4.1, 4.3, 4.5, 5.2, 8.8, 10.4, 7.6 -->
+  <!-- X positions: 60, 243, 426, 609, 792, 975, 1155 -->
+  <!-- Y: temp=(14-t)*(444-228)/12 + 228 so 4.1=>228+12*9.9/12=228+16=... let's just plot visually -->
+  <!-- Scale: 2C -> y=444, 14C -> y=228, so 1C = (444-228)/12 = 18px -->
+  <!-- 4.1C -> 444 - (4.1-2)*18 = 444 - 37.8 = 406 -->
+  <!-- 4.3C -> 444 - 2.3*18 = 402.6 -->
+  <!-- 4.5C -> 444 - 2.5*18 = 399 -->
+  <!-- 5.2C -> 444 - 3.2*18 = 386.4 -->
+  <!-- 8.8C -> 444 - 6.8*18 = 321.6 -->
+  <!-- 10.4C -> 444 - 8.4*18 = 292.8 -->
+  <!-- 7.6C -> 444 - 5.6*18 = 343.2 -->
+  <polyline points="60,406 243,403 426,399 609,386 792,322 975,293 1155,343" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+  <!-- Excursion segment in red -->
+  <polyline points="609,386 792,322 975,293 1155,343" fill="none" stroke="#f87171" stroke-width="3"/>
+  <!-- Data points -->
+  <circle cx="60" cy="406" r="5" fill="#38bdf8"/>
+  <circle cx="243" cy="403" r="5" fill="#38bdf8"/>
+  <circle cx="426" cy="399" r="5" fill="#38bdf8"/>
+  <circle cx="609" cy="386" r="5" fill="#fbbf24"/>
+  <circle cx="792" cy="322" r="7" fill="#f87171" stroke="#fff" stroke-width="2"/>
+  <circle cx="975" cy="293" r="9" fill="#ef4444" stroke="#fff" stroke-width="2"/>
+  <circle cx="1155" cy="343" r="5" fill="#fb923c"/>
+  <!-- Breach annotation -->
+  <line x1="975" y1="293" x2="975" y2="220" stroke="#f87171" stroke-width="1" stroke-dasharray="3,3"/>
+  <rect x="940" y="210" width="120" height="20" rx="3" fill="#7f1d1d"/>
+  <text x="948" y="225" fill="#fca5a5" font-size="9" font-weight="700">PEAK: 10.4C BREACH</text>
+  <!-- X-axis labels -->
+  <text x="48" y="462" fill="#64748b" font-size="9">-6h</text>
+  <text x="230" y="462" fill="#64748b" font-size="9">-5h</text>
+  <text x="413" y="462" fill="#64748b" font-size="9">-4h</text>
+  <text x="596" y="462" fill="#64748b" font-size="9">-3h</text>
+  <text x="779" y="462" fill="#64748b" font-size="9">-2h (delay)</text>
+  <text x="962" y="462" fill="#64748b" font-size="9">-1h (peak)</text>
+  <text x="1140" y="462" fill="#64748b" font-size="9">Now</text>
+  <!-- Regulatory Severity Box -->
+  <rect x="28" y="474" width="1140" height="130" rx="6" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
+  <rect x="28" y="474" width="6" height="130" rx="2" fill="#ef4444"/>
+  <rect x="44" y="482" width="200" height="22" rx="4" fill="#7f1d1d"/>
+  <text x="52" y="498" fill="#fca5a5" font-size="11" font-weight="700">CRITICAL REGULATORY EXCURSION</text>
+  <text x="44" y="524" fill="#f87171" font-size="15" font-weight="700">Temperature Spike: 10.4C for 120+ consecutive minutes (Threshold: 2.0C - 8.0C)</text>
+  <text x="44" y="548" fill="#e2e8f0" font-size="12" font-weight="600">Regulatory Analysis:</text>
+  <text x="44" y="566" fill="#94a3b8" font-size="11">Violates WHO Vaccine Cold Chain Guidelines (TRS 961) and USFDA 21 CFR GDP. Severe potency loss risk.</text>
+  <text x="44" y="582" fill="#94a3b8" font-size="11">Degree-hours out of range: 4.4 DH | Excursion duration: 120 min | Door open events: 1</text>
+  <rect x="900" y="484" width="256" height="36" rx="6" fill="#7f1d1d" stroke="#f87171" stroke-width="1"/>
+  <text x="916" y="507" fill="#fca5a5" font-size="13" font-weight="700">Dispatch Emergency Reroute</text>
+  <!-- Stats Row -->
+  <rect x="28" y="618" width="260" height="80" rx="6" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="44" y="642" fill="#94a3b8" font-size="10">Min Temperature</text>
+  <text x="44" y="672" fill="#38bdf8" font-size="24" font-weight="700">4.1 C</text>
+  <rect x="302" y="618" width="260" height="80" rx="6" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="318" y="642" fill="#94a3b8" font-size="10">Max Temperature</text>
+  <text x="318" y="672" fill="#f87171" font-size="24" font-weight="700">10.4 C</text>
+  <rect x="576" y="618" width="260" height="80" rx="6" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="592" y="642" fill="#94a3b8" font-size="10">Excursion Duration</text>
+  <text x="592" y="672" fill="#fb923c" font-size="24" font-weight="700">120 min</text>
+  <rect x="850" y="618" width="300" height="80" rx="6" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="866" y="642" fill="#94a3b8" font-size="10">Severity Classification</text>
+  <text x="866" y="672" fill="#f87171" font-size="18" font-weight="700">QUARANTINE REQUIRED</text>
+</svg>

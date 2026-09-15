@@ -1,0 +1,248 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RouteGuard AI  -  Disruption Assistant &amp; Fleet Utilisation Optimizer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="logo-badge">RG</div>
+      <div>
+        <h1 class="brand-title">RouteGuard AI</h1>
+        <p class="brand-sub">Disruption Control Tower &amp; Fleet Utilisation Engine</p>
+      </div>
+    </div>
+    
+    <div class="header-meta">
+      <div class="bob-tag">
+        IBM BoB AI Hackathon 2026
+      </div>
+      <div class="live-badge">
+        <span class="pulse-dot"></span> LIVE DISRUPTION FEED ACTIVE
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('control-tower')">
+      Control Tower Overview
+    </button>
+    <button class="tab-btn" onclick="switchTab('cold-chain')">
+      Cold Chain IoT &amp; Excursions
+    </button>
+    <button class="tab-btn" onclick="switchTab('negotiation')">
+      Multi-Agent Carrier Auction
+    </button>
+    <button class="tab-btn" onclick="switchTab('fleet')">
+      Fleet Asset Redeployment
+    </button>
+    <button class="tab-btn" onclick="switchTab('copilot')">
+      IBM BoB Dispatcher Briefs
+    </button>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+
+    <!-- 1. CONTROL TOWER OVERVIEW TAB -->
+    <section id="tab-control-tower" class="tab-content active">
+      <!-- Top Metrics -->
+      <div class="stats-banner" style="margin-bottom: 1.5rem;">
+        <div class="stat-box">
+          <span class="stat-label">Active Shipments</span>
+          <span class="stat-value accent" id="stat-active-count">142</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">High-Risk / Delayed</span>
+          <span class="stat-value critical" id="stat-risk-count">3</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Cold Chain Alert</span>
+          <span class="stat-value warning" id="stat-cold-count">1 Excursion</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Idle Fleet Available</span>
+          <span class="stat-value safe" id="stat-idle-count">8 Trucks</span>
+        </div>
+      </div>
+
+      <div class="grid-container">
+        <!-- Active Shipments Table -->
+        <div class="card" style="grid-column: span 8;">
+          <div class="card-title">
+            <span>Active Freight Shipments &amp; Deterministic Risk Scores</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Updated 2m ago</span>
+          </div>
+
+          <table class="shipment-table">
+            <thead>
+              <tr>
+                <th>Shipment ID</th>
+                <th>Route (Origin to Dest)</th>
+                <th>Cargo / Value</th>
+                <th>Risk Score</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="shipments-tbody">
+              <!-- Rendered dynamically by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Live Disruption Radar -->
+        <div class="card" style="grid-column: span 4;">
+          <div class="card-title">
+            <span>Active Disruption Feed (GDACS &amp; NHAI)</span>
+          </div>
+
+          <div id="disruption-feed-list" style="display: flex; flex-direction: column; gap: 0.9rem;">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. COLD CHAIN IOT MONITOR TAB -->
+    <section id="tab-cold-chain" class="tab-content">
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="telemetry-header">
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 700;">Cold Chain IoT Sensor Log &amp; Excursion Inspector</h2>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+              Pre-delivery temperature excursion detection &amp; WHO/USFDA 21 CFR regulatory severity classification.
+            </p>
+          </div>
+          <span class="badge badge-critical" id="cold-chain-status-badge">1 BREACH DETECTED</span>
+        </div>
+
+        <!-- Sensor Chart Visualization -->
+        <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+          SH-408 (Polio Vaccine Shipment)  -  Temperature Logs (deg C)
+        </div>
+        <div class="sensor-chart-container" id="sensor-chart">
+          <!-- Rendered dynamically by JS -->
+        </div>
+
+        <!-- Regulatory Severity Classification Box -->
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); padding: 1.25rem; margin-top: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <span class="badge badge-critical">CRITICAL REGULATORY EXCURSION</span>
+              <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 0.5rem; color: #f87171;">
+                Temperature Spike: 9.4 deg C for 42 consecutive minutes (Threshold: 2.0 deg C - 8.0 deg C)
+              </h3>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
+                <strong>Regulatory Analysis:</strong> Violates WHO Vaccine Cold Chain Guidelines (Section 4.2) and USFDA 21 CFR Part 211. Severe potency loss risk if unmitigated prior to arrival at Ahmedabad Distribution Center.
+              </p>
+            </div>
+            <button class="btn-action" style="background: var(--status-critical); color: #fff;" onclick="triggerColdChainReroute()">
+              Dispatch Emergency Cold-Storage Reroute
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. MULTI-AGENT CARRIER AUCTION TAB -->
+    <section id="tab-negotiation" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <span>CrewAI Multi-Agent Carrier Negotiation Hub</span>
+          <span class="badge badge-blue">Interactive Agent Auction</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+          Simulated carrier personas bid in real-time on rerouted shipment SH-408. Negotiation logic balances Price, ETA Delta, and SLA Reliability Score.
+        </p>
+
+        <div class="bidding-grid" id="bidding-container">
+          <!-- Rendered dynamically by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. FLEET ASSET REDEPLOYMENT TAB -->
+    <section id="tab-fleet" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <span>Fleet Utilisation &amp; Idle Asset Redeployment Engine</span>
+          <span class="badge badge-safe">8 Idle Assets Available</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+          Matches unassigned trucks/containers sitting in proximity to disrupted corridors for instant load re-assignment.
+        </p>
+
+        <table class="shipment-table">
+          <thead>
+            <tr>
+              <th>Asset ID / Type</th>
+              <th>Current Location</th>
+              <th>Driver / Status</th>
+              <th>Distance to Surge Route</th>
+              <th>Redeployment Match Score</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="fleet-tbody">
+            <!-- Rendered dynamically by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. IBM BOB DISPATCHER COPILOT TAB -->
+    <section id="tab-copilot" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <span>IBM BoB Grounded Dispatcher Copilot</span>
+          <span class="badge badge-blue">Zero-Hallucination Guardrails Active</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+          Translates complex risk computations, cold-chain sensor breaches, and carrier bids into actionable natural-language briefs.
+        </p>
+
+        <div class="copilot-container">
+          <div class="chat-history" id="chat-history">
+            <div class="msg-bubble assistant">
+              <div class="grounded-badge">IBM BoB Copilot  -  Grounded Response</div>
+              Welcome Dispatcher! I have analyzed 142 active shipments. <strong>SH-408 (Polio Vaccines)</strong> requires immediate attention due to a 9.4 deg C cold-chain excursion and NH-48 monsoon flooding. How can I assist you?
+            </div>
+          </div>
+
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Ask BoB (e.g. Summarize risk for SH-408, Recommend reroute for cold chain)..." onkeypress="if(event.key === 'Enter') sendCopilotMsg()">
+            <button class="btn-action" onclick="sendCopilotMsg()">Send Brief Prompt</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Reroute Modal -->
+  <div class="modal-overlay" id="reroute-modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <h2 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--accent-blue);" id="modal-shipment-title">
+        Reroute Analysis: SH-408
+      </h2>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+        Deterministic corridor evaluation engine results with price and delay deltas.
+      </p>
+
+      <div id="modal-corridor-list" style="display: flex; flex-direction: column; gap: 1rem;">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

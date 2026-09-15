@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RouteGuard AI — Pitch Deck (Team Vibhishana assembles)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #090d16;
+      color: #f8fafc;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .slide {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 1100px;
+      height: 650px;
+      padding: 3.5rem;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+      background-image: radial-gradient(circle at 90% 10%, rgba(56, 189, 248, 0.08) 0%, transparent 40%);
+    }
+
+    .slide.active {
+      display: flex;
+      animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .slide-tag {
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+    }
+
+    .slide-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+
+    .slide-content {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      color: #cbd5e1;
+      flex: 1;
+    }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 1.8rem;
+    }
+
+    .bullet-list li::before {
+      content: "⚡";
+      position: absolute;
+      left: 0;
+      top: 2px;
+      font-size: 0.9rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .card-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .nav-bar {
+      height: 70px;
+      background: #0d131f;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 3rem;
+    }
+
+    .nav-btn {
+      background: #38bdf8;
+      color: #000;
+      border: none;
+      padding: 0.6rem 1.4rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: #7dd3fc;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+    }
+
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="slide-container">
+    
+    <!-- Slide 1 -->
+    <div class="slide active">
+      <div>
+        <span class="slide-tag">IBM BoB AI Innovation Hackathon 2026</span>
+        <h1 class="slide-title">RouteGuard AI</h1>
+        <p style="font-size: 1.3rem; color: #94a3b8; font-weight: 300;">
+          Supply Chain Disruption Assistant & Fleet Utilisation Optimizer
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card-box">
+          <strong style="color: #38bdf8;">Team Vibhishana assembles</strong>
+          <p style="margin-top: 0.5rem; font-size: 0.95rem;">
+            <strong>Lead:</strong> Brijesh Rakhasiya<br>
+            <strong>Members:</strong> Vaibhav Tandel, Maulya Soni, Om Choksi<br>
+            <em>CHARUSAT</em>
+          </p>
+        </div>
+        <div class="card-box">
+          <strong style="color: #a855f7;">Built With IBM BoB</strong>
+          <p style="margin-top: 0.5rem; font-size: 0.95rem;">
+            Powered by Watsonx.ai Granite LLM, CrewAI Multi-Agent Framework, FastAPI, and Control Tower UI.
+          </p>
+        </div>
+      </div>
+
+      <div style="font-size: 0.9rem; color: #64748b; font-family: 'JetBrains Mono', monospace;">
+        Repository Name: bob-ai-hackathon-Vibhishana-assembles
+      </div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="slide">
+      <div>
+        <span class="slide-tag">Industry Challenge</span>
+        <h1 class="slide-title">The Logistics Disruption Crisis</h1>
+      </div>
+      <div class="slide-content">
+        <ul class="bullet-list">
+          <li><strong>Reactive Chaos:</strong> Monsoon flooding, highway closures, and port strikes disrupt freight with zero automated early warning.</li>
+          <li><strong>Cold Chain Disasters:</strong> Temperature excursions spoil ₹50L+ vaccine cargoes — breaches are only discovered at delivery when it is too late.</li>
+          <li><strong>Wasted Assets:</strong> Trucks sit idle in low-demand depots while adjacent freight corridors face severe capacity bottlenecks.</li>
+          <li><strong>No Carrier Comparison:</strong> Dispatchers make split-second rerouting choices without price, speed, or reliability trade-off data.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="slide">
+      <div>
+        <span class="slide-tag">Core Solution</span>
+        <h1 class="slide-title">The RouteGuard AI Control Tower</h1>
+      </div>
+      <div class="slide-content">
+        <div class="grid-2">
+          <div class="card-box">
+            <h3 style="color: #38bdf8; margin-bottom: 0.4rem;">1. Live Disruption Radar</h3>
+            <p style="font-size: 0.9rem;">GDACS weather feeds & NHAI advisories correlated with active shipment routes using Haversine geometry.</p>
+          </div>
+          <div class="card-box">
+            <h3 style="color: #ef4444; margin-bottom: 0.4rem;">2. Cold Chain IoT Monitor</h3>
+            <p style="font-size: 0.9rem;">Pre-delivery telemetry parsing with WHO & USFDA 21 CFR regulatory severity classification.</p>
+          </div>
+          <div class="card-box">
+            <h3 style="color: #a855f7; margin-bottom: 0.4rem;">3. CrewAI Carrier Auction</h3>
+            <p style="font-size: 0.9rem;">Multi-agent carrier bidding comparing Speed, Cost, and Reliability personas in real time.</p>
+          </div>
+          <div class="card-box">
+            <h3 style="color: #10b981; margin-bottom: 0.4rem;">4. Fleet Redeployment</h3>
+            <p style="font-size: 0.9rem;">Idle asset locator matching unassigned trucks near disruptions to surge freight corridors.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 4 -->
+    <div class="slide">
+      <div>
+        <span class="slide-tag">Architecture</span>
+        <h1 class="slide-title">Deterministic Core + IBM BoB Grounded Copilot</h1>
+      </div>
+      <div class="slide-content">
+        <ul class="bullet-list">
+          <li><strong>0–100 Risk Engine:</strong> Fully deterministic score. Every point traces to an explicit factor (Disruption Proximity, Cargo Sensitivity, Delay Delta).</li>
+          <li><strong>Zero Hallucination Guarantee:</strong> IBM BoB Copilot is strictly bounded to synthesize numbers already computed by the math engine.</li>
+          <li><strong>CrewAI Agent Integration:</strong> Autonomous carrier bidding personas negotiate rates and ETA deltas automatically.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Slide 5 -->
+    <div class="slide">
+      <div>
+        <span class="slide-tag">Live Impact & ROI</span>
+        <h1 class="slide-title">Quantified Value Creation</h1>
+      </div>
+      <div class="slide-content">
+        <div class="grid-2" style="margin-top: 2rem;">
+          <div class="card-box" style="text-align: center; padding: 2rem;">
+            <div style="font-size: 3rem; font-weight: 800; color: #38bdf8;">80%</div>
+            <p style="margin-top: 0.5rem; font-weight: 600;">Faster Disruption Response Time</p>
+          </div>
+          <div class="card-box" style="text-align: center; padding: 2rem;">
+            <div style="font-size: 3rem; font-weight: 800; color: #10b981;">100%</div>
+            <p style="margin-top: 0.5rem; font-weight: 600;">Cold Chain Pre-Delivery Protection</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="prevSlide()">❮ Previous</button>
+    <div class="slide-counter" id="slide-counter">Slide 1 of 5</div>
+    <button class="nav-btn" onclick="nextSlide()">Next ❯</button>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const counter = document.getElementById('slide-counter');
+
+    function updateSlides() {
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === currentSlide);
+      });
+      counter.innerText = `Slide ${currentSlide + 1} of ${slides.length}`;
+    }
+
+    function nextSlide() {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        updateSlides();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlides();
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+      if (e.key === 'ArrowLeft') prevSlide();
+    });
+  </script>
+</body>
+</html>

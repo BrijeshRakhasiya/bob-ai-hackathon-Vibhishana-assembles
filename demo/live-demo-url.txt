@@ -1,0 +1,3 @@
+NOT DEPLOYED
+# The app runs locally. See docs/setup-guide.md for exact steps to run it on your machine.
+# Open http://localhost:8000/app after starting the FastAPI server.

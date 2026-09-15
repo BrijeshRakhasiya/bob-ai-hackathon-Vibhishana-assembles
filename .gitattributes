@@ -1,0 +1,18 @@
+# Normalize line endings for cross-platform consistency
+* text=auto
+
+# Force LF for shell scripts and YAML (Linux CI needs LF)
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Binary files - no line ending conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.pptx binary
+*.pdf binary
+*.zip binary

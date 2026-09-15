@@ -1,0 +1,79 @@
+﻿# =============================================================================
+# HACKATHON SUBMISSION METADATA  -  RouteGuard AI
+# Team: Vibhishana assembles | IBM BoB AI Innovation Hackathon 2026
+# =============================================================================
+
+team:
+  name: "Vibhishana assembles"
+  track: "AI"
+  lead:
+    name: "Brijesh Rakhasiya"
+    email: "brijesh.rakhasiya@charusat.edu.in"
+  members:
+    - name: "Vaibhav Tandel"
+      email: "vaibhav.tandel@charusat.edu.in"
+    - name: "Maulya Soni"
+      email: "maulya.soni@charusat.edu.in"
+    - name: "Om Choksi"
+      email: "om.choksi@charusat.edu.in"
+
+submission:
+  title: "RouteGuard AI  -  Supply Chain Disruption Assistant & Fleet Utilisation Optimizer"
+
+  problem_statement: >
+    Supply chain disruptions  -  weather events, highway closures, port strikes  -  cascade
+    across hundreds of active shipments in ways impossible to track manually. Fleet assets
+    sit idle while other routes are overloaded, and cold-chain shipments (vaccines,
+    perishables) worth Rs 50L+ are spoiled by temperature excursions only discovered at
+    delivery, when it is already too late to act.
+
+  solution_summary: >
+    RouteGuard AI is a five-stage hybrid AI logistics control tower built with IBM BoB
+    and watsonx.ai Granite. It correlates live GDACS disaster alerts against active
+    shipments using a deterministic 0-100 risk engine, simulates reroutes via a
+    CrewAI multi-agent carrier auction, matches idle fleet assets to surge corridors,
+    and monitors cold-chain IoT sensor streams to detect and classify regulatory
+    excursions (WHO TRS 961 / FDA 21 CFR) before delivery. A grounded IBM BoB copilot
+    synthesises all computed facts into zero-hallucination dispatcher briefs.
+
+  key_features:
+    - "Live GDACS disruption radar correlated against active shipment coordinates (Haversine geometry)"
+    - "Deterministic 0-100 auditable risk engine  -  every point traces to a named, inspectable factor"
+    - "CrewAI multi-agent carrier negotiation  -  Speed, Cost, and Reliability personas bid on reroutes"
+    - "Cold-chain IoT sensor telemetry monitor with WHO TRS 961 / FDA 21 CFR severity classification"
+    - "IBM BoB / watsonx.ai Granite grounded dispatcher copilot  -  zero-hallucination guardrails enforced"
+
+  tech_stack:
+    languages: ["Python", "JavaScript", "HTML", "CSS"]
+    frameworks: ["FastAPI", "Pydantic", "CrewAI", "pytest", "uvicorn"]
+    ibm_technologies: ["IBM BoB", "watsonx.ai (Granite-3-8b-instruct)"]
+    databases: []
+    other: ["GDACS Public API", "httpx", "openai SDK (OpenAI-compatible endpoint)", "GitHub Actions"]
+
+  what_we_are_most_proud_of: >
+    The hybrid architecture: the risk engine, cold-chain excursion detector, and reroute
+    optimizer are 100% deterministic and auditable  -  every score factor is named and
+    returned as data. The IBM BoB / watsonx layer sits strictly on top as a grounded
+    explainer with a system prompt that explicitly forbids inventing any number not already
+    in the computed payload. This makes the AI genuinely trustworthy and auditable for
+    real-world dispatchers, which is the hardest design problem in applied AI logistics.
+
+  known_limitations: >
+    NHAI (National Highways Authority of India) does not publish a public real-time API,
+    so highway closure advisories use clearly-labelled seeded data rather than a live feed.
+    GDACS is genuine and live. The app uses in-memory demo data instead of a persistent
+    database  -  straightforward to replace with PostgreSQL. CrewAI negotiation requires a
+    live LLM endpoint; without one, the negotiation endpoint returns deterministic
+    fallback bids. Screenshots are representative UI renders pending final live-run capture.
+
+# =============================================================================
+# ARTIFACT LOCATIONS
+# =============================================================================
+artifacts:
+  source_code: "src/"
+  setup_guide: "docs/setup-guide.md"
+  architecture_doc: "docs/architecture.md"
+  demo_video: "demo/demo-video-link.txt"
+  live_demo: "demo/live-demo-url.txt"
+  screenshots: "demo/screenshots/"
+  presentation: "presentation/"

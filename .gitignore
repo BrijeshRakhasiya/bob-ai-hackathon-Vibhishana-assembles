@@ -1,0 +1,70 @@
+﻿# =============================================================================
+# RouteGuard AI - .gitignore
+# =============================================================================
+
+# Secrets and credentials - NEVER commit these
+.env
+.env.local
+.env.production
+*.key
+*.pem
+*.p12
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+venv/
+.venv/
+env/
+pip-log.txt
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.coverage
+htmlcov/
+
+# Node.js
+node_modules/
+npm-debug.log*
+.npm
+dist/
+.next/
+.nuxt/
+.cache/
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Large media (link in demo-video-link.txt instead)
+demo/*.mp4
+demo/*.mov
+demo/*.avi
+demo/*.mkv
+
+# Local data and logs
+data/
+logs/
+*.log
+
+# Bob internal cache
+.bob_template/
+.bob/
+
+# uv lock file (optional - remove this line to commit the lock)
+uv.lock

@@ -1,0 +1,3 @@
+https://youtu.be/ROUTEGUARD_AI_DEMO_2026
+# Demo video link — replace the URL above with your actual YouTube/Loom recording.
+# The video should show: app startup, live GDACS disruptions, risk scoring, cold-chain excursion, carrier auction, and IBM BoB copilot brief.
