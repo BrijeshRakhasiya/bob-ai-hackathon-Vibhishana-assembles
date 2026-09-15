@@ -1,374 +1,611 @@
-﻿/* RouteGuard AI  -  Control Tower App Logic */
+/* RouteGuard AI - Control Tower App Logic
+ * All data is fetched from the live FastAPI backend.
+ * Backend must be running at http://localhost:8000
+ * Start with: uvicorn app.main:app --reload --port 8000
+ */
 
 const API_BASE = 'http://localhost:8000/api';
 
-// Seeded Data for Fallback & Instant Preview
-const mockShipments = [
-  {
-    id: "SH-408",
-    origin: "Mumbai Port",
-    destination: "Ahmedabad DC",
-    cargo: "Polio Vaccines (Cold Chain)",
-    value: "Rs 45,000,000",
-    riskScore: 88,
-    status: "Critical Risk",
-    reason: "NH-48 Waterlogging + Temp Excursion (9.4 degC)"
-  },
-  {
-    id: "SH-219",
-    origin: "Chennai",
-    destination: "Bengaluru Logistics Hub",
-    cargo: "Auto Components",
-    value: "Rs 12,500,000",
-    riskScore: 62,
-    status: "Moderate Delay",
-    reason: "Port Strike Traffic Spillover"
-  },
-  {
-    id: "SH-104",
-    origin: "Delhi NCR",
-    destination: "Jaipur Express Center",
-    cargo: "Consumer Electronics",
-    value: "Rs 8,200,000",
-    riskScore: 18,
-    status: "On Schedule",
-    reason: "Normal Transit"
-  },
-  {
-    id: "SH-302",
-    origin: "Kolkata Hub",
-    destination: "Ranchi Yard",
-    cargo: "Pharmaceutical Raw Material",
-    value: "Rs 28,000,000",
-    riskScore: 45,
-    status: "Watchlist",
-    reason: "Approaching GDACS Severe Rainfall Zone"
-  }
-];
-
-const mockDisruptions = [
-  {
-    id: "DIS-01",
-    title: "NH-48 Monsoon Inundation",
-    location: "Vapi-Valsad Stretch",
-    severity: "HIGH",
-    impactedShipments: 14,
-    source: "NHAI Advisory Feed"
-  },
-  {
-    id: "DIS-02",
-    title: "Cyclone Advisory Level 3",
-    location: "Gujarat Coastal Corridor",
-    severity: "CRITICAL",
-    impactedShipments: 8,
-    source: "GDACS / IMD Warning"
-  },
-  {
-    id: "DIS-03",
-    title: "Port Terminal Congestion",
-    location: "JNPT Container Gate 2",
-    severity: "MEDIUM",
-    impactedShipments: 22,
-    source: "Port Authority Feed"
-  }
-];
-
-const mockTelemetry = [
-  { time: "10:00", temp: 4.2, status: "normal" },
-  { time: "11:00", temp: 4.8, status: "normal" },
-  { time: "12:00", temp: 5.1, status: "normal" },
-  { time: "13:00", temp: 7.9, status: "normal" },
-  { time: "14:00", temp: 9.4, status: "breach" },
-  { time: "15:00", temp: 9.1, status: "breach" },
-  { time: "16:00", temp: 8.6, status: "breach" },
-  { time: "17:00", temp: 5.5, status: "normal" }
-];
-
-const mockBids = [
-  {
-    carrier: "FastFreight Express (Speed Persona)",
-    price: "Rs 48,000",
-    timeSaved: "4.5 Hours",
-    slaScore: "98%",
-    status: "RECOMMENDED",
-    isWinner: true
-  },
-  {
-    carrier: "EcoCarrier Logistics (Cost Persona)",
-    price: "Rs 34,500",
-    timeSaved: "2.0 Hours",
-    slaScore: "91%",
-    status: "RUNNER UP",
-    isWinner: false
-  },
-  {
-    carrier: "Reliant Cold Logistics (Reliability Persona)",
-    price: "Rs 52,000",
-    timeSaved: "3.8 Hours",
-    slaScore: "99.5%",
-    status: "QUALIFIED",
-    isWinner: false
-  }
-];
-
-const mockFleet = [
-  {
-    id: "TRK-8821",
-    type: "Refrigerated Container 32ft",
-    location: "Surat Logistics Park (28 km away)",
-    status: "Idle - Available",
-    matchScore: "96%",
-    driver: "Rajesh Kumar (Active Duty)"
-  },
-  {
-    id: "TRK-4402",
-    type: "Multi-Axle Flatbed",
-    location: "Vapi Depot (14 km away)",
-    status: "Idle - Available",
-    matchScore: "88%",
-    driver: "Suresh Patel (Available)"
-  },
-  {
-    id: "TRK-1099",
-    type: "Refrigerated Container 24ft",
-    location: "Vadodara Hub (75 km away)",
-    status: "Idle - Standby",
-    matchScore: "82%",
-    driver: "Amit Shah (Standby)"
-  }
-];
-
-// Initialize Dashboard
+/* ─────────────────────────────────────────────
+   BOOT: load all tabs on page ready
+───────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
-  renderShipments();
-  renderDisruptions();
-  renderColdChainChart();
-  renderBids();
-  renderFleet();
+  loadControlTower();
+  loadColdChain();
+  loadFleet();
+  // Negotiation and Copilot tabs are loaded on demand (user-triggered)
 });
 
-// Tab Switcher
+/* ─────────────────────────────────────────────
+   TAB SWITCHER
+───────────────────────────────────────────── */
 function switchTab(tabId) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
   event.currentTarget.classList.add('active');
   document.getElementById(`tab-${tabId}`).classList.add('active');
 }
 
-// Render Shipments
-function renderShipments() {
-  const tbody = document.getElementById("shipments-tbody");
-  tbody.innerHTML = mockShipments.map(s => {
-    let badgeClass = s.riskScore > 75 ? "badge-critical" : s.riskScore > 40 ? "badge-warning" : "badge-safe";
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+function riskBadgeClass(score) {
+  if (score >= 81) return 'badge-critical';
+  if (score >= 61) return 'badge-warning';
+  if (score >= 31) return 'badge-blue';
+  return 'badge-safe';
+}
+
+function riskBandLabel(score) {
+  if (score >= 81) return 'CRITICAL';
+  if (score >= 61) return 'HIGH';
+  if (score >= 31) return 'MEDIUM';
+  return 'LOW';
+}
+
+function setLoading(elementId, message) {
+  const el = document.getElementById(elementId);
+  if (el) el.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">${message}</td></tr>`;
+}
+
+function setLoadingDiv(elementId, message) {
+  const el = document.getElementById(elementId);
+  if (el) el.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);">${message}</div>`;
+}
+
+/* ─────────────────────────────────────────────
+   TAB 1: CONTROL TOWER
+   APIs used:
+     GET /api/risk/assessments   -> risk scores for all shipments
+     GET /api/risk/disruptions   -> live GDACS disruption feed
+───────────────────────────────────────────── */
+async function loadControlTower() {
+  setLoading('shipments-tbody', 'Loading shipments from backend...');
+  setLoadingDiv('disruption-feed-list', 'Fetching live disruption feed...');
+
+  // Load risk assessments and disruptions in parallel
+  const [assessData, disruptData] = await Promise.all([
+    fetch(`${API_BASE}/risk/assessments`).then(r => r.json()).catch(() => null),
+    fetch(`${API_BASE}/risk/disruptions`).then(r => r.json()).catch(() => null),
+  ]);
+
+  // ── Shipments table ──
+  const tbody = document.getElementById('shipments-tbody');
+  if (!assessData || !assessData.assessments) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--status-critical);padding:1rem;">
+      Backend offline - start uvicorn at port 8000</td></tr>`;
+  } else {
+    const assessments = assessData.assessments;
+
+    // Update top stat boxes
+    document.getElementById('stat-active-count').textContent = assessments.length;
+    const highRisk = assessments.filter(a => a.score >= 61).length;
+    document.getElementById('stat-risk-count').textContent = highRisk;
+
+    tbody.innerHTML = assessments.map(a => {
+      const badge = riskBadgeClass(a.score);
+      const label = riskBandLabel(a.score);
+      // Build a human-readable factor summary
+      const factorSummary = a.factors
+        .filter(f => f.contribution > 0)
+        .map(f => f.explanation)
+        .join(' | ') || 'No active disruptions';
+
+      return `
+        <tr>
+          <td style="font-family:var(--font-code);font-weight:600;color:var(--accent-blue);">
+            ${a.shipment_id}
+          </td>
+          <td>${factorSummary.substring(0, 60)}...</td>
+          <td>
+            <span style="font-size:0.75rem;color:var(--text-muted);">
+              Computed ${new Date(a.computed_at).toLocaleTimeString()}
+            </span>
+          </td>
+          <td>
+            <span class="badge ${badge}">${a.score} / 100 &mdash; ${label}</span>
+          </td>
+          <td>${label}</td>
+          <td>
+            <button class="btn-action" onclick="openRerouteModal('${a.shipment_id}')">
+              Reroute &amp; Negotiate
+            </button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  // ── Disruption feed panel ──
+  const feedEl = document.getElementById('disruption-feed-list');
+  if (!disruptData || !disruptData.disruptions) {
+    feedEl.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;">
+      GDACS feed unavailable (backend offline or no network)</div>`;
+  } else {
+    const disruptions = disruptData.disruptions;
+    document.getElementById('stat-risk-count').textContent =
+      disruptData.count !== undefined ? disruptData.count : disruptions.length;
+
+    if (disruptions.length === 0) {
+      feedEl.innerHTML = `<div style="color:var(--status-safe);font-size:0.85rem;padding:1rem;">
+        No active disruptions detected on GDACS feed.</div>`;
+    } else {
+      feedEl.innerHTML = disruptions.slice(0, 5).map(d => {
+        const badge = d.severity === 'critical' ? 'badge-critical'
+                    : d.severity === 'high'     ? 'badge-warning'
+                    : 'badge-blue';
+        return `
+          <div style="background:var(--bg-surface-elevated);padding:0.9rem;
+                      border-radius:var(--radius-sm);border:1px solid var(--border-color);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <strong style="font-size:0.9rem;">${d.title}</strong>
+              <span class="badge ${badge}">${d.severity.toUpperCase()}</span>
+            </div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px;">
+              ${d.description ? d.description.substring(0, 80) : 'Radius: ' + d.radius_km + ' km'}
+            </div>
+            <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;
+                        font-family:var(--font-code);">
+              Source: ${d.source || 'GDACS'} &nbsp;|&nbsp;
+              Lat: ${d.lat.toFixed(2)}, Lng: ${d.lng.toFixed(2)}
+            </div>
+          </div>`;
+      }).join('');
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
+   TAB 2: COLD CHAIN IoT
+   APIs used:
+     GET /api/cold-chain/telemetry/{id}   -> raw IoT sensor logs
+     GET /api/cold-chain/report/{id}      -> analysis report + severity
+   Default shipment: SHP-1001 (vaccine cold chain)
+───────────────────────────────────────────── */
+async function loadColdChain(shipmentId) {
+  const sid = shipmentId || 'SHP-1001';
+
+  const [logs, report] = await Promise.all([
+    fetch(`${API_BASE}/cold-chain/telemetry/${sid}`).then(r => r.json()).catch(() => null),
+    fetch(`${API_BASE}/cold-chain/report/${sid}`).then(r => r.json()).catch(() => null),
+  ]);
+
+  // ── Sensor bar chart ──
+  const chartEl = document.getElementById('sensor-chart');
+  if (!logs || !Array.isArray(logs) || logs.length === 0) {
+    chartEl.innerHTML = `<div style="color:var(--text-muted);padding:1rem;">
+      No IoT telemetry available for ${sid}.</div>`;
+  } else {
+    const maxTemp = Math.max(...logs.map(l => l.temperature_c), 12);
+    chartEl.innerHTML = logs.map(l => {
+      const isBreach = l.temperature_c > 8.0 || l.temperature_c < 2.0;
+      const heightPct = Math.round((l.temperature_c / maxTemp) * 100);
+      const timeLabel = new Date(l.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      return `
+        <div class="chart-bar-wrap">
+          <div class="bar-val" style="color:${isBreach ? 'var(--status-critical)' : 'var(--text-primary)'};">
+            ${l.temperature_c.toFixed(1)} degC
+          </div>
+          <div class="chart-bar ${isBreach ? 'breach' : 'normal'}" style="height:${heightPct}%;"></div>
+          <div class="bar-time">${timeLabel}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Report / severity box ──
+  if (report && report.severity) {
+    const badge = document.getElementById('cold-chain-status-badge');
+    const isCritical = report.severity === 'CARGO_SPOILED' || report.severity === 'QUARANTINE_REQUIRED';
+
+    if (badge) {
+      badge.textContent = isCritical
+        ? `${report.severity.replace(/_/g, ' ')} DETECTED`
+        : 'NOMINAL - COMPLIANT';
+      badge.className = isCritical ? 'badge badge-critical' : 'badge badge-safe';
+    }
+
+    // Inject the live regulatory analysis below the chart
+    const reportBox = document.getElementById('cold-chain-report-box');
+    if (reportBox) {
+      const color = isCritical ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.08)';
+      const border = isCritical ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)';
+      reportBox.style.background = color;
+      reportBox.style.border = `1px solid ${border}`;
+      reportBox.style.borderRadius = 'var(--radius-md)';
+      reportBox.style.padding = '1.25rem';
+      reportBox.style.marginTop = '1rem';
+
+      reportBox.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <span class="badge ${isCritical ? 'badge-critical' : 'badge-safe'}">
+              ${report.severity.replace(/_/g, ' ')}
+            </span>
+            <h3 style="font-size:1.1rem;font-weight:700;margin-top:0.5rem;
+                       color:${isCritical ? '#f87171' : '#4ade80'};">
+              Max Temp: ${report.max_recorded_c} degC &nbsp;|&nbsp;
+              Excursion: ${report.total_excursion_minutes} min &nbsp;|&nbsp;
+              Degree-hours OOR: ${report.degree_hours_out_of_range}
+            </h3>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.4rem;line-height:1.4;">
+              <strong>Standard:</strong> ${report.compliance_standard}<br>
+              <strong>Action:</strong> ${report.action_recommended}
+            </p>
+          </div>
+          <button class="btn-action"
+                  style="background:var(--status-critical);color:#fff;"
+                  onclick="triggerColdChainReroute()">
+            Emergency Reroute
+          </button>
+        </div>`;
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
+   TAB 3: MULTI-AGENT CARRIER AUCTION
+   API used:
+     POST /api/negotiation/{shipment_id}
+     Body: { "priority": "balanced" }
+   Called when user clicks "Run Auction" or when
+   reroute modal confirms a corridor.
+───────────────────────────────────────────── */
+async function runNegotiation(shipmentId, priority) {
+  const sid = shipmentId || 'SHP-1001';
+  const pri = priority || 'balanced';
+  const container = document.getElementById('bidding-container');
+
+  container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);">
+    Running CrewAI multi-agent auction for ${sid}... (may take 10-20 seconds)</div>`;
+
+  try {
+    const res = await fetch(`${API_BASE}/negotiation/${sid}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priority: pri }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const bids = data.negotiation.bids || [];
+    const recommendation = data.negotiation.recommendation || '';
+    const chosenId = data.negotiation.chosen_carrier_id || '';
+
+    if (bids.length === 0) {
+      container.innerHTML = `<div style="color:var(--text-muted);padding:1rem;">
+        No bids returned from agents.</div>`;
+      return;
+    }
+
+    container.innerHTML = bids.map(b => {
+      const isWinner = b.carrier_id === chosenId;
+      return `
+        <div class="bidder-card ${isWinner ? 'winner' : ''}">
+          <div>
+            <div class="bidder-name">
+              <span>${b.carrier_name}</span>
+              ${isWinner ? '<span class="badge badge-safe">WINNING BID</span>' : ''}
+            </div>
+            <div class="bid-metrics">
+              <div class="metric-item">
+                <span style="font-size:0.7rem;color:var(--text-muted);">Bid Amount</span>
+                <div class="val" style="color:var(--accent-blue);">
+                  Rs ${b.price_inr.toLocaleString('en-IN')}
+                </div>
+              </div>
+              <div class="metric-item">
+                <span style="font-size:0.7rem;color:var(--text-muted);">ETA (hrs)</span>
+                <div class="val" style="color:var(--status-safe);">
+                  +${b.eta_hours.toFixed(1)} hrs
+                </div>
+              </div>
+              <div class="metric-item">
+                <span style="font-size:0.7rem;color:var(--text-muted);">Reliability</span>
+                <div class="val">${(b.reliability_score * 100).toFixed(0)}%</div>
+              </div>
+            </div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;">
+              ${b.rationale}
+            </div>
+          </div>
+          <button class="btn-action" style="margin-top:1rem;width:100%;"
+                  onclick="awardBid('${b.carrier_id}','${b.carrier_name}')">
+            ${isWinner ? 'Contract Awarded' : 'Select Alternative'}
+          </button>
+        </div>`;
+    }).join('');
+
+    // Show negotiator recommendation below bids
+    if (recommendation) {
+      container.innerHTML += `
+        <div style="grid-column:1/-1;background:var(--bg-surface-elevated);
+                    border:1px solid var(--accent-blue);border-radius:var(--radius-md);
+                    padding:1rem;margin-top:0.5rem;">
+          <div style="font-size:0.75rem;font-weight:700;color:var(--accent-blue);
+                      text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">
+            IBM BoB Negotiator Agent Recommendation
+          </div>
+          <div style="font-size:0.875rem;color:var(--text-primary);line-height:1.6;">
+            ${recommendation}
+          </div>
+        </div>`;
+    }
+  } catch (err) {
+    container.innerHTML = `<div style="color:var(--status-critical);padding:1rem;">
+      Negotiation API error: ${err.message}<br>
+      <small>Ensure backend is running and LLM_API_KEY is set in .env</small></div>`;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   TAB 4: FLEET ASSET REDEPLOYMENT
+   APIs used:
+     GET /api/fleet/redeploy/{shipment_id}  -> ranked idle candidates
+     GET /api/fleet/utilisation             -> utilisation %
+───────────────────────────────────────────── */
+async function loadFleet(shipmentId) {
+  const sid = shipmentId || 'SHP-1001';
+  const tbody = document.getElementById('fleet-tbody');
+  if (tbody) setLoading('fleet-tbody', 'Loading fleet candidates...');
+
+  const [candidateData, utilData] = await Promise.all([
+    fetch(`${API_BASE}/fleet/redeploy/${sid}`).then(r => r.json()).catch(() => null),
+    fetch(`${API_BASE}/fleet/utilisation`).then(r => r.json()).catch(() => null),
+  ]);
+
+  // Update idle fleet stat box
+  if (candidateData && candidateData.candidates) {
+    document.getElementById('stat-idle-count').textContent =
+      `${candidateData.candidates.length} Available`;
+  }
+
+  if (utilData && utilData.utilisation_pct !== undefined) {
+    // Update utilisation display if element exists
+    const utilEl = document.getElementById('stat-utilisation');
+    if (utilEl) utilEl.textContent = `${utilData.utilisation_pct}%`;
+  }
+
+  if (!candidateData || !candidateData.candidates) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--status-critical);padding:1rem;">
+      Fleet API unavailable</td></tr>`;
+    return;
+  }
+
+  const candidates = candidateData.candidates;
+
+  if (candidates.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;
+      color:var(--text-muted);padding:2rem;">
+      No idle assets within 250 km of destination.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = candidates.map((c, i) => {
+    const asset = c.asset;
+    const score = (c.redeployment_score * 100).toFixed(0);
+    const scoreClass = score >= 60 ? 'badge-safe' : score >= 30 ? 'badge-blue' : 'badge-warning';
+    const idleSince = asset.idle_since
+      ? `Idle ${c.idle_hours.toFixed(1)} hrs`
+      : 'Active';
     return `
       <tr>
-        <td style="font-family: var(--font-code); font-weight: 600; color: var(--accent-blue);">${s.id}</td>
-        <td>${s.origin} to ${s.destination}</td>
-        <td>${s.cargo}<br><span style="font-size: 0.75rem; color: var(--text-muted);">${s.value}</span></td>
-        <td>
-          <span class="badge ${badgeClass}">${s.riskScore} / 100</span>
+        <td style="font-family:var(--font-code);font-weight:600;">
+          ${asset.id}<br>
+          <span style="font-size:0.75rem;color:var(--text-muted);">${asset.type}</span>
         </td>
-        <td>${s.status}</td>
+        <td>${asset.current_location.name}</td>
         <td>
-          <button class="btn-action" onclick="openRerouteModal('${s.id}')">Reroute & Negotiate</button>
+          <span class="badge badge-safe">${idleSince}</span><br>
+          <span style="font-size:0.75rem;color:var(--text-muted);">
+            ${asset.capacity_tons}T capacity
+          </span>
         </td>
-      </tr>
-    `;
+        <td style="font-family:var(--font-code);">${c.distance_km} km</td>
+        <td><span class="badge ${scoreClass}">${score} / 100</span></td>
+        <td>
+          <button class="btn-action"
+                  onclick="dispatchFleetAsset('${asset.id}','${sid}')">
+            Deploy to ${sid}
+          </button>
+        </td>
+      </tr>`;
   }).join('');
 }
 
-// Render Disruptions
-function renderDisruptions() {
-  const container = document.getElementById("disruption-feed-list");
-  container.innerHTML = mockDisruptions.map(d => {
-    let badge = d.severity === 'CRITICAL' ? 'badge-critical' : d.severity === 'HIGH' ? 'badge-warning' : 'badge-blue';
-    return `
-      <div style="background: var(--bg-surface-elevated); padding: 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <strong style="font-size: 0.9rem;">${d.title}</strong>
-          <span class="badge ${badge}">${d.severity}</span>
-        </div>
-        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
-          Location: ${d.location}  -  ${d.impactedShipments} active shipments affected
-        </div>
-        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; font-family: var(--font-code);">
-          Source: ${d.source}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
+/* ─────────────────────────────────────────────
+   REROUTE MODAL
+   API used:
+     GET /api/risk/reroute/{shipment_id}
+───────────────────────────────────────────── */
+async function openRerouteModal(shipmentId) {
+  const modal = document.getElementById('reroute-modal');
+  document.getElementById('modal-shipment-title').textContent =
+    `Reroute Analysis: ${shipmentId}`;
+  modal.classList.add('active');
 
-// Render Cold Chain Telemetry Chart
-function renderColdChainChart() {
-  const container = document.getElementById("sensor-chart");
-  const maxTemp = 12;
-  container.innerHTML = mockTelemetry.map(t => {
-    let heightPercent = (t.temp / maxTemp) * 100;
-    return `
-      <div class="chart-bar-wrap">
-        <div class="bar-val" style="color: ${t.status === 'breach' ? 'var(--status-critical)' : 'var(--text-primary)'};">${t.temp} degC</div>
-        <div class="chart-bar ${t.status}" style="height: ${heightPercent}%;"></div>
-        <div class="bar-time">${t.time}</div>
-      </div>
-    `;
-  }).join('');
-}
+  const corridorList = document.getElementById('modal-corridor-list');
+  corridorList.innerHTML = `<div style="text-align:center;padding:1.5rem;
+    color:var(--text-muted);">Computing corridor alternatives...</div>`;
 
-// Render CrewAI Bids
-function renderBids() {
-  const container = document.getElementById("bidding-container");
-  container.innerHTML = mockBids.map(b => `
-    <div class="bidder-card ${b.isWinner ? 'winner' : ''}">
-      <div>
-        <div class="bidder-name">
-          <span>${b.carrier}</span>
-          ${b.isWinner ? '<span class="badge badge-safe">WINNING BID</span>' : ''}
-        </div>
-        <div class="bid-metrics">
-          <div class="metric-item">
-            <span style="font-size: 0.7rem; color: var(--text-muted);">Bid Amount</span>
-            <div class="val" style="color: var(--accent-blue);">${b.price}</div>
+  try {
+    const res = await fetch(`${API_BASE}/risk/reroute/${shipmentId}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    const options = data.reroute_options || [];
+    const originalScore = data.assessment ? data.assessment.score : '?';
+
+    if (options.length === 0) {
+      corridorList.innerHTML = `<div style="color:var(--text-muted);">
+        No reroute options available.</div>`;
+      return;
+    }
+
+    corridorList.innerHTML = options.map((opt, i) => {
+      const isRec = opt.recommended;
+      const borderColor = isRec ? 'var(--accent-blue)' : 'var(--border-color)';
+      const riskDelta = originalScore - opt.projected_risk_after;
+      return `
+        <div style="background:var(--bg-surface-elevated);padding:1rem;
+                    border-radius:var(--radius-md);border:1px solid ${borderColor};">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong style="color:${isRec ? 'var(--accent-blue)' : 'var(--text-primary)'};">
+              Corridor ${String.fromCharCode(65 + i)}: ${opt.corridor_description}
+            </strong>
+            ${isRec ? '<span class="badge badge-safe">RECOMMENDED</span>' : ''}
           </div>
-          <div class="metric-item">
-            <span style="font-size: 0.7rem; color: var(--text-muted);">Time Saved</span>
-            <div class="val" style="color: var(--status-safe);">${b.timeSaved}</div>
+          <div style="font-size:0.85rem;color:var(--text-secondary);
+                      margin-top:0.5rem;display:grid;
+                      grid-template-columns:repeat(3,1fr);gap:0.5rem;">
+            <div>
+              <div style="font-size:0.7rem;color:var(--text-muted);">Time Delta</div>
+              <strong>+${opt.delta_time_hours} hrs</strong>
+            </div>
+            <div>
+              <div style="font-size:0.7rem;color:var(--text-muted);">Cost Delta</div>
+              <strong>+Rs ${opt.delta_cost_inr.toLocaleString('en-IN')}</strong>
+            </div>
+            <div>
+              <div style="font-size:0.7rem;color:var(--text-muted);">Risk After</div>
+              <strong style="color:var(--status-safe);">
+                ${opt.projected_risk_after}/100
+                (${riskDelta > 0 ? '-' + riskDelta : '0'} pts)
+              </strong>
+            </div>
           </div>
-        </div>
-        <div style="font-size: 0.8rem; color: var(--text-secondary);">
-          SLA Score: <strong>${b.slaScore}</strong>
-        </div>
-      </div>
-      <button class="btn-action" style="margin-top: 1rem; width: 100%;" onclick="awardBid('${b.carrier}')">
-        ${b.isWinner ? 'Contract Awarded' : 'Select Alternative'}
-      </button>
-    </div>
-  `).join('');
-}
-
-// Render Fleet
-function renderFleet() {
-  const tbody = document.getElementById("fleet-tbody");
-  tbody.innerHTML = mockFleet.map(f => `
-    <tr>
-      <td style="font-family: var(--font-code); font-weight: 600;">${f.id}<br><span style="font-size: 0.75rem; color: var(--text-muted);">${f.type}</span></td>
-      <td>${f.location}</td>
-      <td>${f.driver}<br><span class="badge badge-safe">${f.status}</span></td>
-      <td style="font-family: var(--font-code);">${f.location.split('(')[1] ? f.location.split('(')[1].replace(')', '') : '15 km'}</td>
-      <td><span class="badge badge-blue">${f.matchScore}</span></td>
-      <td>
-        <button class="btn-action" onclick="dispatchFleetAsset('${f.id}')">Redeploy to SH-408</button>
-      </td>
-    </tr>
-  `).join('');
-}
-
-// Reroute Modal Logic
-function openRerouteModal(shipmentId) {
-  const modal = document.getElementById("reroute-modal");
-  document.getElementById("modal-shipment-title").innerText = `Reroute Engine: ${shipmentId}`;
-  
-  const corridorList = document.getElementById("modal-corridor-list");
-  corridorList.innerHTML = `
-    <div style="background: var(--bg-surface-elevated); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--accent-blue);">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <strong style="color: var(--accent-blue);">Corridor A: Expressway Bypass via Vadodara-Godhra</strong>
-        <span class="badge badge-safe">RECOMMENDED</span>
-      </div>
-      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">
-        Bypasses NH-48 flood point. Additional distance: +42 km. Estimated ETA reduction: <strong>3.5 hours</strong>. Post-reroute Risk: <strong>14/100</strong>.
-      </p>
-      <button class="btn-action" style="margin-top: 0.75rem;" onclick="confirmReroute('Corridor A')">Confirm Reroute Corridor</button>
-    </div>
-
-    <div style="background: var(--bg-surface-elevated); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <strong>Corridor B: State Highway 17 Coastal Detour</strong>
-        <span class="badge badge-warning">MODERATE RISK</span>
-      </div>
-      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">
-        Higher toll charges. Additional distance: +78 km. Post-reroute Risk: <strong>38/100</strong>.
-      </p>
-    </div>
-  `;
-  modal.classList.add("active");
+          ${isRec ? `
+          <button class="btn-action" style="margin-top:0.75rem;"
+                  onclick="confirmReroute('${shipmentId}', '${opt.corridor_description}')">
+            Confirm &amp; Start Carrier Auction
+          </button>` : ''}
+        </div>`;
+    }).join('');
+  } catch (err) {
+    corridorList.innerHTML = `<div style="color:var(--status-critical);">
+      Reroute engine error: ${err.message}</div>`;
+  }
 }
 
 function closeModal() {
-  document.getElementById("reroute-modal").classList.remove("active");
+  document.getElementById('reroute-modal').classList.remove('active');
 }
 
-function confirmReroute(corridor) {
-  alert(`Shipment SH-408 rerouted via ${corridor}. Multi-Agent auction initiated.`);
+function confirmReroute(shipmentId, corridor) {
   closeModal();
-  switchTab('negotiation');
+  // Switch to negotiation tab and run the auction
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    if (btn.textContent.trim().includes('Carrier')) btn.click();
+  });
+  // Find and click the negotiation tab button
+  const tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(btn => {
+    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('negotiation')) {
+      btn.click();
+    }
+  });
+  runNegotiation(shipmentId, 'balanced');
 }
 
 function triggerColdChainReroute() {
-  alert("Emergency Cold Chain Reroute Protocol Initiated for SH-408. Re-routing to nearest refrigerated fulfillment hub in Surat.");
-  switchTab('negotiation');
+  // Switch to negotiation tab and run the auction for SHP-1001
+  const tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(btn => {
+    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('negotiation')) {
+      btn.click();
+    }
+  });
+  runNegotiation('SHP-1001', 'most_reliable');
 }
 
-function awardBid(carrier) {
-  alert(`Contract awarded to ${carrier}. Dispatch instruction sent.`);
+function awardBid(carrierId, carrierName) {
+  alert(`Contract awarded to ${carrierName}. Dispatch instruction sent via system.`);
 }
 
-function dispatchFleetAsset(assetId) {
-  alert(`Asset ${assetId} dispatched and redeployed to SH-408.`);
+function dispatchFleetAsset(assetId, shipmentId) {
+  alert(`Asset ${assetId} dispatched and redeployed to ${shipmentId}.`);
 }
 
-// IBM BoB Copilot Chat Logic
+/* ─────────────────────────────────────────────
+   TAB 5: IBM BoB DISPATCHER COPILOT
+   API used:
+     POST /api/copilot/brief
+     Body: { "shipment_id": "SHP-1001" }
+   Extracts shipment_id from user message if present,
+   otherwise defaults to SHP-1001.
+───────────────────────────────────────────── */
 async function sendCopilotMsg() {
-  const input = document.getElementById("chat-input");
+  const input = document.getElementById('chat-input');
   const query = input.value.trim();
   if (!query) return;
 
-  const chatHist = document.getElementById("chat-history");
-  
-  // Add User Bubble
+  const chatHist = document.getElementById('chat-history');
+
+  // Render user bubble
   chatHist.innerHTML += `
-    <div class="msg-bubble user">
-      ${query}
-    </div>
-  `;
-  input.value = "";
+    <div class="msg-bubble user">${query}</div>`;
+  input.value = '';
   chatHist.scrollTop = chatHist.scrollHeight;
 
-  // Call Backend API or Fallback
+  // Show typing indicator
+  const typingId = `typing-${Date.now()}`;
+  chatHist.innerHTML += `
+    <div class="msg-bubble assistant" id="${typingId}">
+      <div class="grounded-badge">IBM BoB Copilot - Thinking...</div>
+      Querying risk engine and cold chain monitor...
+    </div>`;
+  chatHist.scrollTop = chatHist.scrollHeight;
+
+  // Extract shipment ID from query if mentioned (e.g. "SHP-1001" or "SHP-1003")
+  const sidMatch = query.match(/SHP-\d+/i);
+  const shipmentId = sidMatch ? sidMatch[0].toUpperCase() : 'SHP-1001';
+
   try {
     const res = await fetch(`${API_BASE}/copilot/brief`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: query, shipment_id: "SH-408" })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shipment_id: shipmentId }),
     });
-    
-    if (res.ok) {
-      const data = await res.json();
-      chatHist.innerHTML += `
-        <div class="msg-bubble assistant">
-          <div class="grounded-badge">IBM BoB Copilot  -  Live Grounded Brief</div>
-          ${data.brief || data.response}
-        </div>
-      `;
-    } else {
-      throw new Error("API Offline");
-    }
-  } catch (e) {
-    // Grounded Fallback Response
-    let reply = `Based on computed risk data for <strong>SH-408 (Polio Vaccines)</strong>:
-    <br>- <strong>Risk Score:</strong> 88/100 (Critical)
-    <br>- <strong>Primary Disruption:</strong> NH-48 Waterlogging at Vapi (Delay delta: +5.2 hrs)
-    <br>- <strong>Cold Chain Status:</strong> Excursion detected (9.4 degC peak, WHO Severity Class: Critical Regulatory Breach)
-    <br>- <strong>Recommendation:</strong> Reroute via Corridor A (Vadodara-Godhra Bypass) and award contract to FastFreight Express (Saved time: 4.5 hrs, Cost delta: Rs 48,000).`;
-    
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // Remove typing indicator
+    document.getElementById(typingId)?.remove();
+
+    // Format grounding facts as a collapsible summary
+    const facts = data.grounding_facts;
+    const riskScore = facts?.risk_assessment?.score ?? '?';
+    const riskBand  = facts?.risk_assessment?.band  ?? '?';
+    const rerouteCount = facts?.reroute_options?.length ?? 0;
+    const fleetCount   = facts?.fleet_redeployment_candidates?.length ?? 0;
+
     chatHist.innerHTML += `
       <div class="msg-bubble assistant">
-        <div class="grounded-badge">IBM BoB Copilot  -  Grounded Brief Engine</div>
-        ${reply}
-      </div>
-    `;
+        <div class="grounded-badge">
+          IBM BoB Copilot - Grounded Response &nbsp;|&nbsp;
+          Facts: Risk ${riskScore}/100 (${riskBand}),
+          ${rerouteCount} reroute options,
+          ${fleetCount} idle fleet assets
+        </div>
+        <div style="margin-top:0.5rem;line-height:1.7;">
+          ${(data.brief || '').replace(/\n/g, '<br>')}
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById(typingId)?.remove();
+
+    // Grounded offline fallback — never invents numbers
+    chatHist.innerHTML += `
+      <div class="msg-bubble assistant">
+        <div class="grounded-badge">IBM BoB Copilot - Offline Stub</div>
+        <div style="margin-top:0.5rem;line-height:1.7;color:var(--text-secondary);">
+          Backend is offline (${err.message}). Start the server with:<br>
+          <code style="font-size:0.8rem;">
+            cd src/backend &amp;&amp;
+            .venv\\Scripts\\uvicorn.exe app.main:app --reload --port 8000
+          </code>
+        </div>
+      </div>`;
   }
-  
+
   chatHist.scrollTop = chatHist.scrollHeight;
 }
