@@ -30,19 +30,19 @@
 
   <!-- Navigation Tabs -->
   <nav class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('control-tower')">
+    <button class="tab-btn active" onclick="switchTab('control-tower', this)">
       Control Tower Overview
     </button>
-    <button class="tab-btn" onclick="switchTab('cold-chain')">
+    <button class="tab-btn" onclick="switchTab('cold-chain', this)">
       Cold Chain IoT &amp; Excursions
     </button>
-    <button class="tab-btn" onclick="switchTab('negotiation')">
+    <button class="tab-btn" onclick="switchTab('negotiation', this)">
       Multi-Agent Carrier Auction
     </button>
-    <button class="tab-btn" onclick="switchTab('fleet')">
+    <button class="tab-btn" onclick="switchTab('fleet', this)">
       Fleet Asset Redeployment
     </button>
-    <button class="tab-btn" onclick="switchTab('copilot')">
+    <button class="tab-btn" onclick="switchTab('copilot', this)">
       IBM BoB Dispatcher Briefs
     </button>
   </nav>
@@ -125,15 +125,16 @@
 
         <!-- Sensor Chart Visualization -->
         <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
-          SHP-1001 (Polio Vaccine Shipment) - Live IoT Temperature Logs (deg C)
+          SHP-1001 (Pharma Cold-Chain Shipment) - Live IoT Temperature Logs (deg C)
         </div>
         <div class="sensor-chart-container" id="sensor-chart">
           <!-- Rendered dynamically by JS from GET /api/cold-chain/telemetry/SHP-1001 -->
         </div>
 
-        <!-- Regulatory Severity Box - populated dynamically by loadColdChain() -->
+        <!-- Regulatory Severity Box - populated dynamically by renderColdChainChart() -->
         <div id="cold-chain-report-box">
-          <!-- Filled by app.js loadColdChain() from GET /api/cold-chain/report/SHP-1001 -->
+          <!-- Filled by app.js from GET /api/cold-chain/report/SHP-1001 -->
+        </div>
         </div>
       </div>
     </section>
@@ -175,7 +176,7 @@
       <div class="card">
         <div class="card-title">
           <span>Fleet Utilisation &amp; Idle Asset Redeployment Engine</span>
-          <span class="badge badge-safe">8 Idle Assets Available</span>
+          <span class="badge badge-safe" id="fleet-idle-badge">Idle Assets Available</span>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
           Matches unassigned trucks/containers sitting in proximity to disrupted corridors for instant load re-assignment.
@@ -214,7 +215,7 @@
           <div class="chat-history" id="chat-history">
             <div class="msg-bubble assistant">
               <div class="grounded-badge">IBM BoB Copilot  -  Grounded Response</div>
-              Welcome Dispatcher! I have analyzed 142 active shipments. <strong>SH-408 (Polio Vaccines)</strong> requires immediate attention due to a 9.4 deg C cold-chain excursion and NH-48 monsoon flooding. How can I assist you?
+              Welcome Dispatcher! I have analyzed 3 active shipments. <strong>SHP-1001 (Pharma cold-chain vaccines)</strong> requires attention due to the NH-48 waterlogging disruption near Vadodara. How can I assist you?
             </div>
           </div>
 

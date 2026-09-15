@@ -85,7 +85,7 @@ def analyze_cold_chain_telemetry(
     # Determine WHO / FDA GDP Regulatory Severity
     if excursion_minutes == 0:
         severity = ExcursionSeverity.NOMINAL
-        action = "Full compliance maintainted. Cargo temperature within optimal 2°C - 8°C window."
+        action = "Full compliance maintained. Cargo temperature within optimal 2°C - 8°C window."
     elif excursion_minutes <= 15 and max_temp <= 10.0 and min_temp >= 1.0:
         severity = ExcursionSeverity.STABILITY_OK
         action = "Minor transient excursion within manufacturer stability budget (<15 mins). Standard delivery permitted."

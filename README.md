@@ -45,7 +45,7 @@ RouteGuard AI is an IBM BoB-powered control tower that identifies which shipment
 | **Frameworks** | FastAPI, Pydantic v2, pytest-asyncio |
 | **IBM Technologies** | IBM BoB, IBM watsonx.ai (Granite via Groq endpoint) |
 | **AI / Agents** | CrewAI 1.15, Groq API (openai/gpt-oss-120b) |
-| **Live Data** | GDACS Public Disaster & Weather API (aiohttp) |
+| **Live Data** | GDACS Public Disaster & Weather API (httpx) |
 | **Other** | GitHub Actions, uv (dependency manager) |
 
 ---
