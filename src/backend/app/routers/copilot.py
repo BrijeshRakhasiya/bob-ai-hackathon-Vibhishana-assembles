@@ -15,7 +15,8 @@ from __future__ import annotations
 import json
 import os
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.engines.disruption_feed import fetch_all_disruptions
@@ -37,11 +38,14 @@ Rules:
 3. If the payload is missing a piece of information, say so explicitly
    rather than filling it in.
 4. End with one clear recommended action.
+5. Format your answer in clean Markdown: short headings, bullet lists,
+   and **bold** for key numbers (risk score, price, ETA, distance).
 """
 
 
 class BriefRequest(BaseModel):
     shipment_id: str
+    query: str | None = None
 
 
 def _call_llm(system_prompt: str, user_payload: dict) -> str:
@@ -88,13 +92,8 @@ def _call_llm(system_prompt: str, user_payload: dict) -> str:
     return response.choices[0].message.content or ""
 
 
-@router.post("/brief")
-async def generate_brief(req: BriefRequest):
-    """Grounded natural-language dispatcher brief for one shipment."""
-    shipment = demo_data.get_shipment(req.shipment_id)
-    if not shipment:
-        raise HTTPException(status_code=404, detail="Shipment not found")
-
+async def _grounding_payload(shipment) -> dict:
+    """Build the deterministic facts payload the LLM is grounded on."""
     disruptions = await fetch_all_disruptions()
     affected = find_affected_shipments([shipment], disruptions)
     hits = affected.get(shipment.id, [])
@@ -102,7 +101,7 @@ async def generate_brief(req: BriefRequest):
     reroutes = simulate_reroutes(shipment, assessment)
     fleet_candidates = find_redeployment_candidates(demo_data.FLEET, shipment.destination)
 
-    payload = {
+    return {
         "shipment": shipment.model_dump(mode="json"),
         "risk_assessment": assessment.model_dump(mode="json"),
         "reroute_options": [r.model_dump(mode="json") for r in reroutes],
@@ -116,5 +115,80 @@ async def generate_brief(req: BriefRequest):
         ],
     }
 
+
+def _sse_token_stream(system_prompt: str, user_payload: dict):
+    """Yield SSE `data:` chunks of the brief as the LLM streams tokens."""
+    api_key = os.getenv("LLM_API_KEY", "")
+    if not api_key:
+        stub = (
+            "[No LLM_API_KEY configured - this is a stub response. "
+            "Set LLM_API_KEY in src/backend/.env to enable the copilot. "
+            f"Computed facts were: {json.dumps(user_payload)[:500]}]"
+        )
+        yield f"data: {json.dumps({'token': stub})}\n\n"
+        yield "data: [DONE]\n\n"
+        return
+
+    try:
+        from openai import OpenAI
+    except ImportError:
+        yield f"data: {json.dumps({'error': 'openai package not installed - run: uv pip install openai'})}\n\n"
+        yield "data: [DONE]\n\n"
+        return
+
+    try:
+        client = OpenAI(
+            base_url=os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1"),
+            api_key=api_key,
+        )
+        stream = client.chat.completions.create(
+            model=os.getenv("LLM_MODEL", "openai/gpt-oss-120b"),
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": json.dumps(user_payload)},
+            ],
+            temperature=0.2,
+            max_tokens=1024,   # gpt-oss-120b is a reasoning model; needs headroom
+            stream=True,
+        )
+        for chunk in stream:
+            delta = None
+            if chunk.choices:
+                delta = chunk.choices[0].delta.content
+            if delta:
+                yield f"data: {json.dumps({'token': delta})}\n\n"
+    except Exception as exc:  # network / auth / quota — surface to UI, don't hang
+        yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+    yield "data: [DONE]\n\n"
+
+
+@router.post("/brief")
+async def generate_brief(req: BriefRequest):
+    """Grounded natural-language dispatcher brief for one shipment (non-streaming)."""
+    shipment = demo_data.get_shipment(req.shipment_id)
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Shipment not found")
+
+    payload = await _grounding_payload(shipment)
     brief_text = _call_llm(_SYSTEM_PROMPT, payload)
     return {"shipment_id": req.shipment_id, "brief": brief_text, "grounding_facts": payload}
+
+
+@router.get("/brief/stream")
+async def stream_brief(
+    shipment_id: str = Query(...),
+    query: str | None = Query(default=None),
+):
+    """SSE stream of the grounded brief. Events: `{"token": "..."}` then `[DONE]`."""
+    shipment = demo_data.get_shipment(shipment_id)
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Shipment not found")
+
+    payload = await _grounding_payload(shipment)
+    if query:
+        payload = {**payload, "dispatcher_question": query}
+    return StreamingResponse(
+        _sse_token_stream(_SYSTEM_PROMPT, payload),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

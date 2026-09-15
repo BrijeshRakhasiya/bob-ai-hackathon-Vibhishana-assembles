@@ -101,6 +101,32 @@ def seeded_nhai_disruptions() -> list[Disruption]:
             source_url=None,
             reported_at=now,
         ),
+        Disruption(
+            id="port-seed-002",
+            type=DisruptionType.PORT_STRIKE,
+            severity=DisruptionSeverity.MODERATE,
+            title="JNPT container gate congestion — berth delays",
+            description="Seeded advisory standing in for the port authority's non-public feed.",
+            lat=18.9490,
+            lng=72.9525,
+            radius_km=30.0,
+            source="Port Authority (seeded)",
+            source_url=None,
+            reported_at=now,
+        ),
+        Disruption(
+            id="nhai-seed-003",
+            type=DisruptionType.HIGHWAY_CLOSURE,
+            severity=DisruptionSeverity.MODERATE,
+            title="NH44 lane maintenance near Hyderabad — speed restrictions",
+            description="Seeded advisory standing in for NHAI's non-public real-time feed.",
+            lat=17.3850,
+            lng=78.4867,
+            radius_km=35.0,
+            source="NHAI (seeded)",
+            source_url=None,
+            reported_at=now,
+        ),
     ]
 
 

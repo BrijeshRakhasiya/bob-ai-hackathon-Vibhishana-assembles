@@ -22,7 +22,13 @@ import json
 import os
 from typing import Any
 
-from crewai import Agent, Crew, LLM, Process, Task
+try:
+    from crewai import Agent, Crew, LLM, Process, Task
+
+    _CREWAI_AVAILABLE = True
+except Exception:  # e.g. chromadb/pydantic-v1 incompatible with Python 3.14
+    Agent = Crew = LLM = Process = Task = None  # type: ignore
+    _CREWAI_AVAILABLE = False
 
 from app.models.schemas import CarrierBid, RerouteOption, RiskAssessment, Shipment
 
@@ -171,10 +177,11 @@ def run_carrier_negotiation(
     Orchestrates the three carrier agents + one negotiator agent via CrewAI.
     Returns {"bids": [...], "recommendation": str, "chosen_carrier_id": str}.
 
-    If LLM_API_KEY is not set, all agents return deterministic fallback bids
-    so the demo still works without credentials.
+    If LLM_API_KEY is not set (or CrewAI failed to import, e.g. on
+    Python 3.14 where chromadb/pydantic-v1 breaks), all agents return
+    deterministic fallback bids so the demo still works without credentials.
     """
-    if not os.getenv("LLM_API_KEY"):
+    if not _CREWAI_AVAILABLE or not os.getenv("LLM_API_KEY"):
         # Deterministic fallback when no LLM key is configured
         bids = [
             CarrierBid(
