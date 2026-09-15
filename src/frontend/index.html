@@ -125,28 +125,16 @@
 
         <!-- Sensor Chart Visualization -->
         <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
-          SHP-1001 (Pharma Cold-Chain Shipment)  -  Temperature Logs (deg C)
+          SHP-1001 (Pharma Cold-Chain Shipment) - Live IoT Temperature Logs (deg C)
         </div>
         <div class="sensor-chart-container" id="sensor-chart">
-          <!-- Rendered dynamically by JS -->
+          <!-- Rendered dynamically by JS from GET /api/cold-chain/telemetry/SHP-1001 -->
         </div>
 
-        <!-- Regulatory Severity Classification Box (updated live from /api/cold-chain/report) -->
-        <div id="cold-severity-box" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); padding: 1.25rem; margin-top: 1rem;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-              <span class="badge badge-critical" id="cold-box-badge">CRITICAL REGULATORY EXCURSION</span>
-              <h3 id="cold-box-title" style="font-size: 1.1rem; font-weight: 700; margin-top: 0.5rem; color: var(--status-critical);">
-                Temperature Spike: 9.4 deg C for 42 consecutive minutes (Threshold: 2.0 deg C - 8.0 deg C)
-              </h3>
-              <p id="cold-box-desc" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
-                <strong>Regulatory Analysis:</strong> Violates WHO Vaccine Cold Chain Guidelines (Section 4.2) and USFDA 21 CFR Part 211. Severe potency loss risk if unmitigated prior to arrival at Ahmedabad Distribution Center.
-              </p>
-            </div>
-            <button class="btn-action" style="background: var(--status-critical); color: #fff;" onclick="triggerColdChainReroute()">
-              Dispatch Emergency Cold-Storage Reroute
-            </button>
-          </div>
+        <!-- Regulatory Severity Box - populated dynamically by renderColdChainChart() -->
+        <div id="cold-chain-report-box">
+          <!-- Filled by app.js from GET /api/cold-chain/report/SHP-1001 -->
+        </div>
         </div>
       </div>
     </section>
@@ -159,11 +147,26 @@
           <span class="badge badge-blue">Interactive Agent Auction</span>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-          Simulated carrier personas bid in real-time on rerouted shipment SH-408. Negotiation logic balances Price, ETA Delta, and SLA Reliability Score.
+          Three CrewAI carrier agents bid on the rerouted shipment. The negotiator agent picks the best contract.
+          Priority: <strong>balanced</strong> (cheapest | fastest | most_reliable | balanced).
         </p>
 
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <button class="btn-action" onclick="runNegotiation('SHP-1001','balanced')">
+            Run Auction for SHP-1001 (Vaccines)
+          </button>
+          <button class="btn-action" onclick="runNegotiation('SHP-1002','cheapest')">
+            Run Auction for SHP-1002 (Machinery)
+          </button>
+          <button class="btn-action" onclick="runNegotiation('SHP-1003','fastest')">
+            Run Auction for SHP-1003 (Electronics JIT)
+          </button>
+        </div>
+
         <div class="bidding-grid" id="bidding-container">
-          <!-- Rendered dynamically by JS -->
+          <div style="text-align:center;padding:2rem;color:var(--text-muted);grid-column:1/-1;">
+            Click a button above to run the live CrewAI carrier auction.
+          </div>
         </div>
       </div>
     </section>

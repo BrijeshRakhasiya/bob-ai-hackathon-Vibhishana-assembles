@@ -14,6 +14,21 @@ function inr(n) {
   return "Rs " + Number(n).toLocaleString("en-IN");
 }
 
+// Backend risk bands (must match assess_risk in risk_engine.py)
+function riskBadgeClass(score) {
+  if (score >= 81) return 'badge-critical';
+  if (score >= 61) return 'badge-warning';
+  if (score >= 31) return 'badge-blue';
+  return 'badge-safe';
+}
+
+function riskBandLabel(score) {
+  if (score >= 81) return 'CRITICAL';
+  if (score >= 61) return 'HIGH';
+  if (score >= 31) return 'MEDIUM';
+  return 'LOW';
+}
+
 // Seeded Data for Fallback & Instant Preview
 const mockShipments = [
   {
@@ -207,14 +222,14 @@ function switchTab(tabId, el) {
 
 // Render Shipments — live backend first, mock fallback when API is offline
 function shipmentRowHtml(s) {
-  let badgeClass = s.riskScore > 75 ? "badge-critical" : s.riskScore > 40 ? "badge-warning" : "badge-safe";
+  const badgeClass = s.band ? riskBadgeClass(s.riskScore) : (s.riskScore > 75 ? "badge-critical" : s.riskScore > 40 ? "badge-warning" : "badge-safe");
   return `
     <tr>
       <td style="font-family: var(--font-code); font-weight: 600; color: var(--accent-blue);">${s.id}</td>
       <td>${s.origin} to ${s.destination}</td>
       <td>${s.cargo}<br><span style="font-size: 0.75rem; color: var(--text-muted);">${s.value}</span></td>
       <td>
-        <span class="badge ${badgeClass}">${s.riskScore} / 100</span>
+        <span class="badge ${badgeClass}">${s.riskScore} / 100${s.band ? ` &mdash; ${s.band}` : ""}</span>
       </td>
       <td>${s.status}</td>
       <td>
@@ -235,6 +250,7 @@ async function renderShipments() {
     const rows = shipments.map((sh) => {
       const a = scores[sh.id];
       const score = a ? a.score : 0;
+      const band = a ? riskBandLabel(score) : null;
       return shipmentRowHtml({
         id: sh.id,
         origin: sh.origin.name,
@@ -242,12 +258,13 @@ async function renderShipments() {
         cargo: sh.cargo_description,
         value: inr(sh.cargo_value_inr),
         riskScore: score,
-        status: !a ? "Unknown" : score > 75 ? "Critical Risk" : score > 40 ? "Watchlist" : "On Schedule",
+        band: band,
+        status: !a ? "Unknown" : band === "CRITICAL" || band === "HIGH" ? "Critical Risk" : band === "MEDIUM" ? "Watchlist" : "On Schedule",
       });
     });
     tbody.innerHTML = rows.join('');
-    // Live stat counts
-    const high = Object.values(scores).filter((a) => a.score > 40).length;
+    // Live stat counts (HIGH = score >= 61, matching backend bands)
+    const high = Object.values(scores).filter((a) => a.score >= 61).length;
     document.getElementById("stat-active-count").textContent = shipments.length;
     document.getElementById("stat-risk-count").textContent = high;
   } catch (e) {
@@ -315,23 +332,42 @@ function telemetryChartHtml(points) {
 }
 
 function updateColdSeverityBox(report) {
-  const badge = document.getElementById("cold-box-badge");
-  const title = document.getElementById("cold-box-title");
-  const desc = document.getElementById("cold-box-desc");
   const headerBadge = document.getElementById("cold-chain-status-badge");
-  if (!badge || !title || !desc) return;
+  const box = document.getElementById("cold-chain-report-box");
   const sev = report.severity || "NOMINAL";
   const breach = sev !== "NOMINAL" && sev !== "STABILITY_OK";
-  badge.className = "badge " + (breach ? "badge-critical" : sev === "STABILITY_OK" ? "badge-warning" : "badge-safe");
-  badge.textContent = sev === "NOMINAL" ? "COMPLIANT" : String(sev).replace(/_/g, " ");
-  title.textContent = `Range ${report.min_recorded_c}–${report.max_recorded_c} deg C (${report.total_excursion_minutes} min out of 2.0–8.0 deg C window)`;
-  desc.innerHTML = `<strong>Regulatory Analysis:</strong> ${report.action_recommended}`;
+  const sevLabel = String(sev).replace(/_/g, " ");
   if (headerBadge) {
     headerBadge.className = "badge " + (breach ? "badge-critical" : "badge-safe");
-    headerBadge.textContent = breach ? "1 BREACH DETECTED" : "COMPLIANT";
+    headerBadge.textContent = breach ? `${sevLabel} DETECTED` : "COMPLIANT";
   }
   const statCold = document.getElementById("stat-cold-count");
   if (statCold) statCold.textContent = breach ? "1 Excursion" : "Compliant";
+  if (!box) return;
+  const bg = breach ? "rgba(220, 38, 38, 0.06)" : "rgba(5, 150, 105, 0.06)";
+  const border = breach ? "rgba(220, 38, 38, 0.3)" : "rgba(5, 150, 105, 0.3)";
+  const badgeCls = breach ? "badge-critical" : "badge-safe";
+  box.style.background = bg;
+  box.style.border = `1px solid ${border}`;
+  box.style.borderRadius = "var(--radius-md)";
+  box.style.padding = "1.25rem";
+  box.style.marginTop = "1rem";
+  box.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+      <div>
+        <span class="badge ${badgeCls}">${sevLabel}</span>
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 0.5rem; color: var(--status-critical);">
+          Max ${report.max_recorded_c} deg C &nbsp;|&nbsp; Excursion ${report.total_excursion_minutes} min &nbsp;|&nbsp; Door events ${report.door_open_events}
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
+          <strong>Standard:</strong> ${report.compliance_standard || "WHO TRS 961 / FDA 21 CFR GDP Guidelines"}<br>
+          <strong>Regulatory Analysis:</strong> ${report.action_recommended}
+        </p>
+      </div>
+      <button class="btn-action" style="background: var(--status-critical); color: #fff; white-space: nowrap;" onclick="triggerColdChainReroute()">
+        Emergency Reroute
+      </button>
+    </div>`;
 }
 
 async function renderColdChainChart() {
@@ -452,26 +488,47 @@ function fleetRowHtml(f) {
   `;
 }
 
-async function renderFleet() {
+function candidateRowHtml(c, shipmentId) {
+  const asset = c.asset;
+  const score = Math.round(c.redeployment_score * 100);
+  const scoreCls = score >= 60 ? "badge-safe" : score >= 30 ? "badge-blue" : "badge-warning";
+  return `
+    <tr data-asset-row="${asset.id}">
+      <td style="font-family: var(--font-code); font-weight: 600;">${asset.id}<br><span style="font-size: 0.75rem; color: var(--text-muted);">${asset.type} · ${asset.capacity_tons}T</span></td>
+      <td>${asset.current_location.name}</td>
+      <td><span class="badge badge-safe" data-asset-status="${asset.id}">Idle ${Number(c.idle_hours).toFixed(1)} hrs</span></td>
+      <td style="font-family: var(--font-code);">${c.distance_km} km</td>
+      <td><span class="badge ${scoreCls}">${score} / 100</span></td>
+      <td>
+        <button class="btn-action" data-dispatch-btn="${asset.id}" onclick="dispatchFleetAsset('${asset.id}', '${shipmentId}')">Deploy to ${shipmentId}</button>
+      </td>
+    </tr>
+  `;
+}
+
+async function renderFleet(shipmentId) {
+  const sid = shipmentId || DEFAULT_SHIPMENT_ID;
   const tbody = document.getElementById("fleet-tbody");
-  // Sync idle/active state + counts from the backend; mock rows stay as fallback
+  // Ranked idle candidates near the shipment destination; mock rows stay as fallback
   try {
-    const [fleet, util] = await Promise.all([apiGet("/fleet"), apiGet("/fleet/utilisation")]);
-    const byId = Object.fromEntries(fleet.map((a) => [a.id, a]));
-    mockFleet.forEach((f) => {
-      const real = byId[f.id];
-      if (real && real.idle_since == null && !f.status.startsWith("Deployed")) {
-        f.status = "Deployed - active";
-      }
-    });
-    const idleCount = fleet.filter((a) => a.idle_since != null).length;
+    const [data, fleet] = await Promise.all([
+      apiGet(`/fleet/redeploy/${encodeURIComponent(sid)}`),
+      apiGet("/fleet").catch(() => null),
+    ]);
+    const candidates = data.candidates || [];
+    if (!candidates.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No idle assets within 250 km of destination.</td></tr>`;
+    } else {
+      tbody.innerHTML = candidates.map((c) => candidateRowHtml(c, sid)).join('');
+    }
+    const idleCount = fleet ? fleet.filter((a) => a.idle_since != null).length : candidates.length;
     const idleBadge = document.getElementById("fleet-idle-badge");
     if (idleBadge) idleBadge.textContent = `${idleCount} Idle Assets Available`;
     const statIdle = document.getElementById("stat-idle-count");
     if (statIdle) statIdle.textContent = `${idleCount} Trucks`;
-    void util;
-  } catch (e) { /* offline — mock rows as-is */ }
-  tbody.innerHTML = mockFleet.map(fleetRowHtml).join('');
+  } catch (e) {
+    tbody.innerHTML = mockFleet.map(fleetRowHtml).join('');
+  }
 }
 
 // Reroute Modal Logic — live corridors from GET /api/risk/reroute/{id}
@@ -530,22 +587,24 @@ function triggerColdChainReroute() {
   openRerouteModal(DEFAULT_SHIPMENT_ID);
 }
 
-async function dispatchFleetAsset(assetId) {
+async function dispatchFleetAsset(assetId, shipmentId) {
+  const sid = shipmentId || DEFAULT_SHIPMENT_ID;
   const btn = document.querySelector(`[data-dispatch-btn="${assetId}"]`);
   if (btn) { btn.disabled = true; btn.textContent = "Dispatching…"; }
   try {
     const res = await fetch(`${API_BASE}/fleet/dispatch`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ asset_id: assetId, shipment_id: DEFAULT_SHIPMENT_ID })
+      body: JSON.stringify({ asset_id: assetId, shipment_id: sid })
     });
     if (!res.ok) throw new Error(`Dispatch failed (${res.status})`);
     await res.json();
     // Update row inline — no alert box
+    const statusEl = document.querySelector(`[data-asset-status="${assetId}"]`);
+    if (statusEl) { statusEl.className = "badge badge-blue"; statusEl.textContent = `Deployed - ${sid}`; }
     const entry = mockFleet.find((f) => f.id === assetId);
-    if (entry) entry.status = `Deployed - ${DEFAULT_SHIPMENT_ID}`;
-    const row = document.querySelector(`[data-asset-row="${assetId}"]`);
-    if (row && entry) row.outerHTML = fleetRowHtml(entry);
+    if (entry) entry.status = `Deployed - ${sid}`;
+    if (btn) { btn.textContent = "Deployed ✓"; }
     // Refresh idle counts from the backend
     try {
       const fleet = await apiGet("/fleet");
@@ -633,7 +692,11 @@ function sendCopilotMsg() {
   input.value = "";
   chatHist.scrollTop = chatHist.scrollHeight;
 
-  const bodyEl = appendAssistantBubble(chatHist, "IBM BoB Copilot — Live Grounded Brief", "<em>Thinking…</em>");
+  // Brief the shipment mentioned in the question (e.g. "SHP-1005"), else the default
+  const sidMatch = query.match(/SHP-\d+/i);
+  const briefSid = sidMatch ? sidMatch[0].toUpperCase() : DEFAULT_SHIPMENT_ID;
+
+  const bodyEl = appendAssistantBubble(chatHist, `IBM BoB Copilot — Live Grounded Brief (${briefSid})`, "<em>Thinking…</em>");
   let raw = "";
 
   const paint = () => { bodyEl.innerHTML = renderMarkdown(raw); chatHist.scrollTop = chatHist.scrollHeight; };
@@ -643,7 +706,7 @@ function sendCopilotMsg() {
     const res = await fetch(`${API_BASE}/copilot/brief`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shipment_id: DEFAULT_SHIPMENT_ID, query: query })
+      body: JSON.stringify({ shipment_id: briefSid, query: query })
     });
     if (!res.ok) throw new Error("API Offline");
     const data = await res.json();
@@ -652,7 +715,7 @@ function sendCopilotMsg() {
   };
 
   try {
-    const url = `${API_BASE}/copilot/brief/stream?shipment_id=${encodeURIComponent(DEFAULT_SHIPMENT_ID)}&query=${encodeURIComponent(query)}`;
+    const url = `${API_BASE}/copilot/brief/stream?shipment_id=${encodeURIComponent(briefSid)}&query=${encodeURIComponent(query)}`;
     const es = new EventSource(url);
     es.onmessage = (ev) => {
       if (ev.data === "[DONE]") { es.close(); paint(); return; }
